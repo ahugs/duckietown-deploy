@@ -82,20 +82,20 @@ class CombinedModel(nn.Module):
         mu, std = self.actor(encoded, std)
         return mu, std
     
-encoder_weights_path = "encoder_weights.pth"
-actor_weights_path = "actor_weights.pth"
+#encoder_weights_path = "encoder_weights.pth"
+#actor_weights_path = "actor_weights.pth"
 
-obs_shape = (9, 84, 84)
-action_shape = (2, )
-feature_dim = 50
-hidden_dim = 1024
+#obs_shape = (9, 84, 84)
+#action_shape = (2, )
+#feature_dim = 50
+#hidden_dim = 1024
 
-model = CombinedModel(obs_shape, action_shape, feature_dim, hidden_dim)
+#model = CombinedModel(obs_shape, action_shape, feature_dim, hidden_dim)
 
-model.encoder.load_state_dict(torch.load(encoder_weights_path))
-model.actor.load_state_dict(torch.load(actor_weights_path))
+#model.encoder.load_state_dict(torch.load(encoder_weights_path))
+#model.actor.load_state_dict(torch.load(actor_weights_path))
 
-model.eval()
+#model.eval()
 
-print("Done")
+#print("Done")
 
