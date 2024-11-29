@@ -4,6 +4,18 @@ import torch.nn.functional as F
 from torch import distributions as pyd
 from torch.distributions.utils import _standard_normal
 
+def weight_init(m):
+    if isinstance(m, nn.Linear):
+        nn.init.orthogonal_(m.weight.data)
+        if hasattr(m.bias, 'data'):
+            m.bias.data.fill_(0.0)
+    elif isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+        gain = nn.init.calculate_gain('relu')
+        nn.init.orthogonal_(m.weight.data, gain)
+        if hasattr(m.bias, 'data'):
+            m.bias.data.fill_(0.0)
+
+
 class TruncatedNormal(pyd.Normal):
     def __init__(self, loc, scale, low=-1.0, high=1.0, eps=1e-6):
         super().__init__(loc, scale, validate_args=False)
@@ -40,6 +52,7 @@ class Encoder(nn.Module):
                                      nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
                                      nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
                                      nn.ReLU())
+        self.apply(weight_init)
 
     def forward(self, obs):
         obs = obs / 255.0 - 0.5
@@ -60,6 +73,7 @@ class Actor(nn.Module):
                                     nn.Linear(hidden_dim, hidden_dim),
                                     nn.ReLU(inplace=True),
                                     nn.Linear(hidden_dim, action_shape[0]))
+        self.apply(weight_init)
 
     def forward(self, obs, std):
         h = self.trunk(obs)
@@ -78,9 +92,11 @@ class CombinedModel(nn.Module):
         self.actor = Actor(self.encoder.repr_dim, action_shape, feature_dim, hidden_dim)
 
     def forward(self, obs, std):
-        encoded = self.encoder(obs)
-        mu, std = self.actor(encoded, std)
-        return mu, std
+        encoded = self.encoder(obs.unsqueeze(0))
+        print(encoded.shape)
+        print(self.actor)
+        dist = self.actor(encoded, std)
+        return dist.mean.detach().cpu().numpy()[0]
     
 #encoder_weights_path = "encoder_weights.pth"
 #actor_weights_path = "actor_weights.pth"
